@@ -1,12 +1,14 @@
 package models
+
 import (
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
-
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -14,7 +16,7 @@ import (
 
 type User struct {
 	gorm.Model
-	Name		string				`json:"user_name"`
+	Name		string				`json:"user_name" gorm:"unique"`
     Email    	string 				`json:"email" gorm:"unique"`
 	Password	string				`json:"password"`
 	Money		uint				`json:"money"`
@@ -22,6 +24,11 @@ type User struct {
 }	
 
 func CreateUser(Db *gorm.DB,user *User) error{
+
+	if !isValidEmail(user.Email) {
+        return errors.New("Invalid email format")
+    }
+
 	hashedPassword,err := bcrypt.GenerateFromPassword([]byte(user.Password),bcrypt.DefaultCost)
 	if err != nil{
 		return err
@@ -101,4 +108,11 @@ func ReceiveNewProduct(Db *gorm.DB,user *User)error{
         return err
     }
 	return nil
+}
+
+func isValidEmail(email string) bool {
+    pattern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+    regex := regexp.MustCompile(pattern)
+	
+    return regex.MatchString(email)
 }

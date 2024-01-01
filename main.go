@@ -20,13 +20,26 @@ func main() {
         log.Fatal("Error loading .env file")
     }
 	app := fiber.New()
+	app.Static("/", "./static")
+	app.Get("/login", func(c *fiber.Ctx) error {
+        return c.Render("static/login.html",nil)
+    })
+	app.Get("/register", func(c *fiber.Ctx) error {
+        return c.Render("static/register.html",nil)
+    })
 
-	app.Get("/",getTest)
+    app.Get("/landing", func(c *fiber.Ctx) error {
+        return c.Render("static/landingPage.html", nil)
+    })
+
+
+	// app.Get("/",getTest)
 
 	app.Post("/register",register)
 	app.Post("/login",login)
 
 	app.Use("/user",UserAuthRequired)
+	app.Get("/user",getUserById)
 	app.Get("/user/product",findProductByUserId)
 
 
@@ -96,6 +109,18 @@ func login(c *fiber.Ctx)error{
 	})
 
 	return c.Status(fiber.StatusOK).SendString("Login Success")
+}
+
+func getUserById(c *fiber.Ctx)error{
+	userId,ok := c.Locals("user_id").(int)
+	if !ok{
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid user ID")
+	}
+	user,err := models.GetUser(database.Db,userId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+	return c.JSON(user)
 }
 
 func findProductByUserId(c *fiber.Ctx)error{

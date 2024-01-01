@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Second Page</title>
+</head>
+<body>
+    <h1>Landing</h1>
+    <h2 id="money">Money :</h2>
+    <h2 id="moneyValue"></h2>
+    <br>
+    <div id="menuButton">
+        <button onclick="showMarket()">Market</button>
+        <button onclick="showInventory()">Inventory</button>
+        <br>
+        <button onclick="Logout()">Logout</button>
+    </div>
+    <div id="productTableContainer"></div>
+
+    <script>
+        window.onload = function() {
+            fetch('/user')
+                .then(response => response.json())
+                .then(user => {
+                    document.getElementById("moneyValue").innerText = user.money;                   
+                })
+        };
+        function showMarket() {
+            clearProductTable();
+            fetch('/product')
+                .then(response => response.json())
+                .then(products => displayProductTable(products, 'Market'));
+        }
+        function showInventory() {
+            clearProductTable();
+            fetch('/user/product')
+                .then(response => response.json())
+                .then(products => displayProductTable(products, 'Inventory'));
+        }
+
+        function displayProductTable(products, title) {
+            const tableContainer = document.getElementById('productTableContainer');
+            const table = document.createElement('table');
+            const headerRow = table.createTHead().insertRow(0);
+            headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Default Price</strong>';
+            headerRow.insertCell(2).innerHTML = '<strong>Sell to system</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>Sell to market</strong>';
+
+            for (const product of products) {
+                const row = table.insertRow();
+                row.insertCell(0).innerHTML = product.product_name;
+                row.insertCell(1).innerHTML = product.default_price;
+                const cell3 = row.insertCell(2);
+                const cell4 = row.insertCell(3);
+
+
+                const sellMarketButton = document.createElement('button');
+                sellMarketButton.innerText = 'Sell';
+                sellMarketButton.onclick = function() {
+                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                };
+                cell3.appendChild(sellMarketButton);
+
+
+                const sellSystemButton = document.createElement('button');
+                sellSystemButton.innerText = 'Sell';
+                sellSystemButton.onclick = function() {
+                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                };
+                cell4.appendChild(sellSystemButton);
+            }
+
+            tableContainer.innerHTML = `<h2>${title}</h2>`;
+            tableContainer.appendChild(table);
+        }
+        function clearProductTable() {
+            document.getElementById('productTableContainer').innerHTML = '';
+        }
+
+        function Logout() {
+            window.location.href = "/login";
+        }
+    </script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 1%; 
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        #money,#moneyValue {
+            display: inline; /* Set the display property to inline */
+        }
+        /* body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        } */
+        #menuButton{
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        #menuButton button{
+            margin-top: 5px;
+            margin-bottom: 5px;
+            margin-right: 5px;
+        }
+        h1, label, input{
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+    </style>
+</body>
+</html>

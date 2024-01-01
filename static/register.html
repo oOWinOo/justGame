@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register to justGame</title>
+</head>
+<body>
+    <h1>Create New Account</h1>
+    <label for="UserName">Username :</label>
+    <input type="text" id="userName" name="userName" placeholder="Enter your username">
+    <br>
+    <label for="Email">Email :</label>
+    <input type="text" id="email" name="email" placeholder="Enter your email">
+    <br>
+    <label for="pwd">Password :</label>
+    <input type="text" id="password" name="password" placeholder="Enter your password">
+    <br>
+    <label id="error-message"></label>
+    <button onclick="Register()">Register</button>
+    <br>
+    <button onclick="Login()">Already have account?</button>
+    <script>
+        
+        function Login() {
+            window.location.href = "/login";
+        }
+        function Register() {
+            var userName = document.getElementById("userName").value;
+            var email = document.getElementById("email").value;
+            var password = document.getElementById("password").value;
+
+            fetch("/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    user_name: userName,
+                    email: email,
+                    password: password,
+                }),
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = "/login"; 
+                    document.getElementById("error-message").innerText = "";
+                } else {
+                    document.getElementById("error-message").innerText = "Username or email is invalid.";
+                    console.error("Registration failed");
+                }
+            });
+        }
+    </script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1, label, input, button {
+            margin-bottom: 10px;
+            font-size: 250%;
+        }
+        #error-message {
+            color: red;
+            font-size: 1rem;
+        }
+    </style>
+</body>
+</html>
