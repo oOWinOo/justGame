@@ -43,5 +43,42 @@ func ConnectDatabase() {
 }
 
 func Initialize(){
-	Db.AutoMigrate(models.User{},models.ProductList{},models.Product{})
+	Db.AutoMigrate(models.Market{},models.User{},models.Product{},models.ProductList{})
+}
+
+func InitializeData(){
+	unSellProduct := new(models.Market)
+	firstMarket := new(models.Market)
+	Db.Create(unSellProduct)
+	Db.Create(firstMarket)
+
+	lightBulb := new(models.ProductList)
+	lightBulb.Name = "lightBulb"
+	lightBulb.DefaultPrice = 20
+	lightBulb.Rarity = 10000
+	Db.Create(lightBulb)
+
+	pan := new(models.ProductList)
+	pan.Name = "pan"
+	pan.DefaultPrice = 15
+	pan.Rarity = 10000
+	Db.Create(pan)
+
+	guitar := new(models.ProductList)
+	guitar.Name = "guitar"
+	guitar.DefaultPrice = 20
+	guitar.Rarity = 10000
+	Db.Create(guitar)
+
+	macBook := new(models.ProductList)
+	macBook.Name = "macBook"
+	macBook.DefaultPrice = 2000
+	macBook.Rarity = 100
+	Db.Create(macBook)
+
+	mobilePhone := new(models.ProductList)
+	mobilePhone.Name = "mobilePhone"
+	mobilePhone.DefaultPrice = 150
+	mobilePhone.Rarity = 1000
+	Db.Create(mobilePhone)
 }

@@ -19,9 +19,11 @@ type Product struct{
 	Name			string	`json:"product_name"`
 	DefaultPrice	uint	`json:"default_price"`
 	UserId			uint	`json:"user_id"`
+	MarketId		uint	`json:"market_id"`
+	Sold			bool	`json:"isSold"`
 }
 
-func CreateNewProduct(Db *gorm.DB,product *ProductList)error{
+func CreateNewProduct(Db *gorm.DB,product *ProductList)error{ //admin
 	if product.DefaultPrice == 0{
 		return errors.New("Default Price can not be 0")
 	}
@@ -57,6 +59,8 @@ func RandomProduct(Db *gorm.DB)(*Product,error){
 
 			newProduct.Name = product.Name
 			newProduct.DefaultPrice = product.DefaultPrice
+			newProduct.MarketId = 1
+			newProduct.Sold = false
 			return newProduct,nil
 		}
 	}
@@ -71,5 +75,26 @@ func GetAllProducts(Db *gorm.DB)([]Product,error){
 		return *products,result.Error
 	}
 	return *products,nil
+}
+
+func GetProductById(Db *gorm.DB,id uint)(Product,error){
+	product := new(Product)
+	result := Db.Where("id = ?",id).First(product)
+	if result.Error != nil{
+		return *product,result.Error
+	}
+	return *product,nil
+}
+
+func DeleteProductById(Db *gorm.DB,id uint)error{
+	product , err := GetProductById(Db,id)
+	if err != nil{
+		return err
+	}
+	result := Db.Delete(&product)
+	if result.Error != nil{
+		return result.Error
+	}
+	return nil
 }
 

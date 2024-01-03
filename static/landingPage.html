@@ -11,6 +11,8 @@
     <div id="menuButton">
         <button onclick="showMarket()">Market</button>
         <button onclick="showInventory()">Inventory</button>
+        <button onclick="showMyMarket()">My Market</button>
+        <button onclick="randomNewProduct()">Receive Random Product</button>
         <br>
         <button onclick="Logout()">Logout</button>
     </div>
@@ -26,26 +28,48 @@
         };
         function showMarket() {
             clearProductTable();
-            fetch('/product')
+            fetch('/product/market/2')
                 .then(response => response.json())
-                .then(products => displayProductTable(products, 'Market'));
+                .then(products => displayMarketProductTable(products, 'Market'));
         }
         function showInventory() {
             clearProductTable();
             fetch('/user/product')
                 .then(response => response.json())
-                .then(products => displayProductTable(products, 'Inventory'));
+                .then(products => displayInventoryProductTable(products, 'Inventory'));
+        }
+        function showMyMarket() {
+            clearProductTable();
+            fetch('/user/product/market')
+                .then(response => response.json())
+                .then(products => displayMyMarketProductTable(products, 'My Market'));
+        }
+        function randomNewProduct(){
+            fetch("/user/product/recieve/random", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            window.location.href = "/landing"; 
+                        } else {
+                            console.error("Random failed");
+                        }
+                    });
         }
 
-        function displayProductTable(products, title) {
+        function displayInventoryProductTable(products, title) {
             const tableContainer = document.getElementById('productTableContainer');
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
             headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
             headerRow.insertCell(1).innerHTML = '<strong>Default Price</strong>';
-            headerRow.insertCell(2).innerHTML = '<strong>Sell to system</strong>';
-            headerRow.insertCell(3).innerHTML = '<strong>Sell to market</strong>';
-
+            headerRow.insertCell(2).innerHTML = '<strong>Sell to Market</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>Sell to System</strong>';
+            if (products == null){
+                products = []
+            }
             for (const product of products) {
                 const row = table.insertRow();
                 row.insertCell(0).innerHTML = product.product_name;
@@ -65,7 +89,22 @@
                 const sellSystemButton = document.createElement('button');
                 sellSystemButton.innerText = 'Sell';
                 sellSystemButton.onclick = function() {
-                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                    fetch("/user/product/sellsystem", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({  
+                            "ID": product.ID
+                        }),
+                    }).then(response => {
+                        if (response.ok) {
+                            window.location.href = "/landing"; 
+                        } else {
+                            console.error("Sell failed");
+                        }
+                    });
+                    // alert(`Selling ${product.product_name} for ${product.default_price}`);
                 };
                 cell4.appendChild(sellSystemButton);
             }
@@ -73,6 +112,75 @@
             tableContainer.innerHTML = `<h2>${title}</h2>`;
             tableContainer.appendChild(table);
         }
+
+        function displayMarketProductTable(products, title) {
+            const tableContainer = document.getElementById('productTableContainer');
+            const table = document.createElement('table');
+            const headerRow = table.createTHead().insertRow(0);
+            headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Price</strong>';
+            headerRow.insertCell(2).innerHTML = '<strong>UserID</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>Buy</strong>';
+            if (products == null){
+                products = []
+            }
+            for (const product of products) {
+                const row = table.insertRow();
+                row.insertCell(0).innerHTML = product.product_name;
+                row.insertCell(1).innerHTML = product.default_price;
+                row.insertCell(2).innerHTML = product.user_id;
+                const cell4 = row.insertCell(3);
+
+                const BuyButton = document.createElement('button');
+                BuyButton.innerText = 'Buy';
+                BuyButton.onclick = function() {
+                    alert(`Buying ${product.product_name} for ${product.default_price}`);
+                };
+                cell4.appendChild(BuyButton);
+            }
+
+            tableContainer.innerHTML = `<h2>${title}</h2>`;
+            tableContainer.appendChild(table);
+        }
+
+        function displayMyMarketProductTable(products, title) {
+            const tableContainer = document.getElementById('productTableContainer');
+            const table = document.createElement('table');
+            const headerRow = table.createTHead().insertRow(0);
+            headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Price</strong>';
+            headerRow.insertCell(2).innerHTML = '<strong>Cancel</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>Claims</strong>';
+            if (products == null){
+                products = []
+            }
+            for (const product of products) {
+                const row = table.insertRow();
+                row.insertCell(0).innerHTML = product.product_name;
+                row.insertCell(1).innerHTML = product.default_price;
+                const cell3 = row.insertCell(2);
+                const cell4 = row.insertCell(3);
+
+
+                const CancelButton = document.createElement('button');
+                CancelButton.innerText = 'Cancel';
+                CancelButton.onclick = function() {
+                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                };
+                cell3.appendChild(CancelButton);
+
+                const ClaimButton = document.createElement('button');
+                ClaimButton.innerText = 'Claims';
+                ClaimButton.onclick = function() {
+                    alert(`Buying ${product.product_name} for ${product.default_price}`);
+                };
+                cell4.appendChild(ClaimButton);
+            }
+
+            tableContainer.innerHTML = `<h2>${title}</h2>`;
+            tableContainer.appendChild(table);
+        }
+
         function clearProductTable() {
             document.getElementById('productTableContainer').innerHTML = '';
         }

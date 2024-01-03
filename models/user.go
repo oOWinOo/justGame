@@ -21,6 +21,7 @@ type User struct {
 	Password	string				`json:"password"`
 	Money		uint				`json:"money"`
 	Products	[]Product			`json:"products"`
+	StorageSize	uint				`json:"storage"`
 }	
 
 func CreateUser(Db *gorm.DB,user *User) error{
@@ -35,16 +36,17 @@ func CreateUser(Db *gorm.DB,user *User) error{
 	}
 	user.Password = string(hashedPassword)
 	user.Money = 1000
+	user.StorageSize = 10
 	
 	result := Db.Create(user)
 	if result.Error != nil{
 		return result.Error
 	}
-	err = ReceiveNewProduct(Db,user)
+	err = ReceiveNewRandomProduct(Db,user)
 	if err != nil{
 		return err
 	}
-	err = ReceiveNewProduct(Db,user)
+	err = ReceiveNewRandomProduct(Db,user)
 	if err != nil{
 		return err
 	}
@@ -92,7 +94,10 @@ func GetUser(Db *gorm.DB,id int)(User,error){
 }
 
 
-func ReceiveNewProduct(Db *gorm.DB,user *User)error{
+func ReceiveNewRandomProduct(Db *gorm.DB,user *User)error{
+	if len(user.Products) == int(user.StorageSize) {
+		return errors.New("Not enough storage.")
+	}
 	product,err := RandomProduct(Db)
 	if err != nil{
 		return err
