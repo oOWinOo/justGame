@@ -31,3 +31,23 @@ func GetMarketProductByPriceFilter(Db *gorm.DB,first uint,last uint) ([]Product,
 
 	return filterProducts,nil
 }
+
+func PostProductOnMarket(Db *gorm.DB,product *Product,price uint) (error) {
+	product.MarketId = 2
+	product.PriceSet = price
+	product.Sold = true
+	if err := Db.Save(*product).Error; err != nil {
+        return err
+    }
+	return nil
+}
+
+func CancelProductOnMarket(Db *gorm.DB,product *Product) (error) {
+	product.MarketId = 1
+	product.PriceSet = 0
+	product.Sold = false
+	if err := Db.Save(*product).Error; err != nil {
+        return err
+    }
+	return nil
+}

@@ -95,7 +95,7 @@ func GetUser(Db *gorm.DB,id int)(User,error){
 
 
 func ReceiveNewRandomProduct(Db *gorm.DB,user *User)error{
-	if len(user.Products) == int(user.StorageSize) {
+	if !CheckStorage(user.StorageSize,user.Products){
 		return errors.New("Not enough storage.")
 	}
 	product,err := RandomProduct(Db)
@@ -109,6 +109,7 @@ func ReceiveNewRandomProduct(Db *gorm.DB,user *User)error{
 	}
 
 	user.Products = append(user.Products, *product)
+	user.Money = user.Money - 50
 	if err := Db.Save(user).Error; err != nil {
         return err
     }
@@ -120,4 +121,16 @@ func isValidEmail(email string) bool {
     regex := regexp.MustCompile(pattern)
 	
     return regex.MatchString(email)
+}
+
+func CheckStorage(cap uint,products []Product) bool{
+	for _,product := range products{
+		if !product.Sold {
+			cap -= 1
+		}
+	}
+	if cap <= 0 {
+		return false
+	}
+	return true
 }

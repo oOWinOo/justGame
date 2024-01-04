@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 
 	"math/rand"
 
@@ -18,6 +19,7 @@ type Product struct{
 	gorm.Model
 	Name			string	`json:"product_name"`
 	DefaultPrice	uint	`json:"default_price"`
+	PriceSet		uint	`json:"price_set"`
 	UserId			uint	`json:"user_id"`
 	MarketId		uint	`json:"market_id"`
 	Sold			bool	`json:"isSold"`
@@ -61,6 +63,7 @@ func RandomProduct(Db *gorm.DB)(*Product,error){
 			newProduct.DefaultPrice = product.DefaultPrice
 			newProduct.MarketId = 1
 			newProduct.Sold = false
+			newProduct.PriceSet = 0;
 			return newProduct,nil
 		}
 	}
@@ -98,3 +101,14 @@ func DeleteProductById(Db *gorm.DB,id uint)error{
 	return nil
 }
 
+func ChangeOwner(Db *gorm.DB,newUserId uint,product *Product)error{
+	product.UserId = newUserId
+	product.PriceSet = 0;
+	product.MarketId = 1
+	product.Sold = false
+	if err := Db.Save(*product).Error; err != nil {
+        return err
+    }
+	fmt.Println(product)
+	return nil
+}

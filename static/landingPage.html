@@ -15,10 +15,63 @@
         <button onclick="randomNewProduct()">Receive Random Product</button>
         <br>
         <button onclick="Logout()">Logout</button>
+        <br>        
+        <div class="popup" id="popup">
+            <h2 id="popup-content"></h2>
+            <!-- Your form or content goes here -->
+            <input type="number" name="quantity" min="0" step="1" id="price-set">
+            <button class="close-btn" id="confirmSystem">Confirm</button>
+            <button class="close-btn" onclick="closePopup()">Close</button>
+        </div>
+        <div class="overlay" id="overlay" onclick="closePopup()"></div>
+
+
     </div>
     <div id="productTableContainer"></div>
 
     <script>
+        function openSellPopup(product) {
+            // Display the overlay and popup
+            document.getElementById('popup-content').innerHTML = "How much of " +product.product_name+ " you want to sell on market"
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('price-set').style.display = 'block';
+            document.getElementById('confirmSystem').onclick = function() {
+                price = document.getElementById("price-set").value
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('popup').style.display = 'none';
+                confirmSellProductMarket(product,price);
+            };
+        }
+        function openConfirmPopup(product) {
+            // Display the overlay and popup
+            document.getElementById('popup-content').innerHTML = "Are you sure to sell " +product.product_name+ " : "+ product.default_price+" to system ?"
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('confirmSystem').onclick = function() {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('popup').style.display = 'none';
+                confirmSellProductSystem(product);
+            };
+        }
+        function openBuyPopup(product) {
+            // Display the overlay and popup
+            document.getElementById('popup-content').innerHTML = "Are you sure to buy " +product.product_name+ " : "+ product.price_set+" from market ?"
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('confirmSystem').onclick = function() {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('popup').style.display = 'none';
+                confirmBuyProductMarket(product);
+            };
+        }
+        function closePopup() {
+            // Hide the overlay and popup
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('popup').style.display = 'none';
+            document.getElementById('price-set').style.display = 'none';
+        }
+
         window.onload = function() {
             fetch('/user')
                 .then(response => response.json())
@@ -34,7 +87,7 @@
         }
         function showInventory() {
             clearProductTable();
-            fetch('/user/product')
+            fetch('/user/product/inventory')
                 .then(response => response.json())
                 .then(products => displayInventoryProductTable(products, 'Inventory'));
         }
@@ -52,7 +105,13 @@
                         }
                     }).then(response => {
                         if (response.ok) {
-                            window.location.href = "/landing"; 
+                            // window.location.href = "/landing"; 
+                            showInventory();
+                            fetch('/user')
+                                .then(response => response.json())
+                                .then(user => {
+                                    document.getElementById("moneyValue").innerText = user.money;                   
+                                })
                         } else {
                             console.error("Random failed");
                         }
@@ -81,30 +140,16 @@
                 const sellMarketButton = document.createElement('button');
                 sellMarketButton.innerText = 'Sell';
                 sellMarketButton.onclick = function() {
-                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                    openSellPopup(product);
                 };
                 cell3.appendChild(sellMarketButton);
 
 
                 const sellSystemButton = document.createElement('button');
                 sellSystemButton.innerText = 'Sell';
-                sellSystemButton.onclick = function() {
-                    fetch("/user/product/sellsystem", {
-                        method: "PATCH",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({  
-                            "ID": product.ID
-                        }),
-                    }).then(response => {
-                        if (response.ok) {
-                            window.location.href = "/landing"; 
-                        } else {
-                            console.error("Sell failed");
-                        }
-                    });
-                    // alert(`Selling ${product.product_name} for ${product.default_price}`);
+                sellSystemButton.onclick = function(){
+                    openConfirmPopup(product)
+                    
                 };
                 cell4.appendChild(sellSystemButton);
             }
@@ -118,9 +163,10 @@
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
             headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
-            headerRow.insertCell(1).innerHTML = '<strong>Price</strong>';
-            headerRow.insertCell(2).innerHTML = '<strong>UserID</strong>';
-            headerRow.insertCell(3).innerHTML = '<strong>Buy</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Default Price</strong>';
+            headerRow.insertCell(2).innerHTML = '<strong>Price</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>UserID</strong>';
+            headerRow.insertCell(4).innerHTML = '<strong>Buy</strong>';
             if (products == null){
                 products = []
             }
@@ -128,13 +174,14 @@
                 const row = table.insertRow();
                 row.insertCell(0).innerHTML = product.product_name;
                 row.insertCell(1).innerHTML = product.default_price;
-                row.insertCell(2).innerHTML = product.user_id;
-                const cell4 = row.insertCell(3);
+                row.insertCell(2).innerHTML = product.price_set;
+                row.insertCell(3).innerHTML = product.user_id;
+                const cell4 = row.insertCell(4);
 
                 const BuyButton = document.createElement('button');
                 BuyButton.innerText = 'Buy';
                 BuyButton.onclick = function() {
-                    alert(`Buying ${product.product_name} for ${product.default_price}`);
+                    openBuyPopup(product);
                 };
                 cell4.appendChild(BuyButton);
             }
@@ -148,9 +195,9 @@
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
             headerRow.insertCell(0).innerHTML = '<strong>Product_Name</strong>';
-            headerRow.insertCell(1).innerHTML = '<strong>Price</strong>';
-            headerRow.insertCell(2).innerHTML = '<strong>Cancel</strong>';
-            headerRow.insertCell(3).innerHTML = '<strong>Claims</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Default Price</strong>';
+            headerRow.insertCell(2).innerHTML = '<strong>Price</strong>';
+            headerRow.insertCell(3).innerHTML = '<strong>Cancel</strong>';
             if (products == null){
                 products = []
             }
@@ -158,23 +205,33 @@
                 const row = table.insertRow();
                 row.insertCell(0).innerHTML = product.product_name;
                 row.insertCell(1).innerHTML = product.default_price;
-                const cell3 = row.insertCell(2);
-                const cell4 = row.insertCell(3);
+                row.insertCell(2).innerHTML = product.price_set;
+                const cell3 = row.insertCell(3);
+                const cell4 = row.insertCell(4);
 
 
                 const CancelButton = document.createElement('button');
                 CancelButton.innerText = 'Cancel';
                 CancelButton.onclick = function() {
-                    alert(`Selling ${product.product_name} for ${product.default_price}`);
+                    fetch("/user/product/cancelmarket", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({  
+                            "ID": product.ID
+                        }),
+                    }).then(response => {
+                        if (response.ok) {
+                            // window.location.href = "/landing"; 
+                            showInventory();
+                        } else {
+                            console.error("Cancel failed");
+                        }
+                    });
                 };
                 cell3.appendChild(CancelButton);
 
-                const ClaimButton = document.createElement('button');
-                ClaimButton.innerText = 'Claims';
-                ClaimButton.onclick = function() {
-                    alert(`Buying ${product.product_name} for ${product.default_price}`);
-                };
-                cell4.appendChild(ClaimButton);
             }
 
             tableContainer.innerHTML = `<h2>${title}</h2>`;
@@ -184,6 +241,81 @@
         function clearProductTable() {
             document.getElementById('productTableContainer').innerHTML = '';
         }
+
+
+        function confirmSellProductMarket(product,price) {
+                    fetch("/user/product/sellmarket", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({  
+                            "ID": product.ID,
+                            "price_set" : price
+                        }),
+                    }).then(response => {
+                        if (response.ok) {
+                            // window.location.href = "/landing"; 
+                            document.getElementById('overlay').style.display = 'none';
+                            document.getElementById('popup').style.display = 'none';
+                            document.getElementById('price-set').style.display = 'none';
+                            showInventory();
+                        } else {
+                            console.error("Sell failed");
+                        }
+                    });
+                };        
+        function confirmSellProductSystem(product) {
+                    fetch("/user/product/sellsystem", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({  
+                            "ID": product.ID
+                        }),
+                    }).then(response => {
+                        if (response.ok) {
+                            // window.location.href = "/landing"; 
+                            showInventory();
+                            fetch('/user')
+                                .then(response => response.json())
+                                .then(user => {
+                                    document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                        } else {
+                            console.error("Sell failed");
+                        }
+                    });
+                };
+        function confirmBuyProductMarket(product,price) {
+            fetch("/user/product/buymarket", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({  
+                    "ID": product.ID,
+                    "price_set" : price
+                }),
+            }).then(response => {
+                if (response.ok) {
+                    // window.location.href = "/landing"; 
+                    document.getElementById('overlay').style.display = 'none';
+                    document.getElementById('popup').style.display = 'none';
+                    document.getElementById('price-set').style.display = 'none';
+                    showInventory();
+                    fetch('/user')
+                                .then(response => response.json())
+                                .then(user => {
+                                    document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                } else {
+                    console.error("Buy failed");
+                }
+            });
+        };      
+
 
         function Logout() {
             window.location.href = "/login";
@@ -224,6 +356,53 @@
             margin-bottom: 10px;
             font-size: 2rem;
         }
+
+
+        /* Style for the overlay background */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        /* Style for the popup */
+        .popup {
+            display: none;
+            position: fixed;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 100;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Style for the close button */
+        .close-btn {
+            cursor: pointer;
+            padding: 5px 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+        }
+
+        #price-set{
+            display: none;
+        }
+
+
+
     </style>
 </body>
 </html>
