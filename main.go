@@ -42,6 +42,7 @@ func main() {
 
 	app.Use("/user",UserAuthRequired)
 	app.Get("/user",getUserById)
+	app.Get("/user/loginReward",getLoginReward)
 	app.Get("/user/product",findProductByUserId)
 	app.Get("/user/product/inventory",findProductInventoryByUserId)
 	app.Get("/user/product/market",getUserMarketProducts)
@@ -144,6 +145,19 @@ func login(c *fiber.Ctx)error{
 	return c.Status(fiber.StatusOK).SendString("Login Success")
 }
 
+func getLoginReward(c *fiber.Ctx)error{
+	userId,ok := c.Locals("user_id").(int)
+	if !ok{
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid user ID")
+	}
+	user,err := models.GetUser(database.Db,userId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+	reward,err := models.CalDailyMoney(database.Db,&user)
+	return c.JSON(reward)
+}
+
 func getUserById(c *fiber.Ctx)error{
 	userId,ok := c.Locals("user_id").(int)
 	if !ok{
@@ -162,11 +176,11 @@ func findProductByUserId(c *fiber.Ctx)error{
 	if !ok{
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid user ID")
 	}
-	user,err := models.GetUser(database.Db,userId)
+	products,err := models.GetUserProducts(database.Db,userId)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
-	return c.JSON(user.Products)
+	return c.JSON(products)
 }
 
 func findProductInventoryByUserId(c *fiber.Ctx)error{

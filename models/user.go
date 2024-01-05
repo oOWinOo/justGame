@@ -22,6 +22,7 @@ type User struct {
 	Money		uint				`json:"money"`
 	Products	[]Product			`json:"products"`
 	StorageSize	uint				`json:"storage"`
+	LastLogin	time.Time			`json:"lastlogin"`
 }	
 
 func CreateUser(Db *gorm.DB,user *User) error{
@@ -37,7 +38,6 @@ func CreateUser(Db *gorm.DB,user *User) error{
 	user.Password = string(hashedPassword)
 	user.Money = 1000
 	user.StorageSize = 10
-	
 	result := Db.Create(user)
 	if result.Error != nil{
 		return result.Error
@@ -59,7 +59,14 @@ func LoginUser(Db *gorm.DB,user *User) (string,error){
 	if result.Error != nil{
 		return "",result.Error
 	}
-
+	if !isGetDaily(searchUser){
+		if err := getDailyMoney(Db,searchUser); err!= nil{
+			return "",err
+		}
+	}
+	if err := UpdateLastLogin(Db,searchUser); err!= nil{
+		return "",err
+	}
 	err := bcrypt.CompareHashAndPassword([]byte(searchUser.Password),[]byte(user.Password))
 	if err != nil{
 		return "",err
@@ -81,6 +88,7 @@ func LoginUser(Db *gorm.DB,user *User) (string,error){
 	if err != nil {
 		return "",err
 	}
+	
 	return tokenString,nil
 }
 
@@ -91,6 +99,14 @@ func GetUser(Db *gorm.DB,id int)(User,error){
 		return *user,result.Error
 	}
 	return *user,nil
+}
+
+func GetUserProducts(Db *gorm.DB,userId int)([]Product,error){
+	user,err := GetUser(Db,userId)
+	if err != nil {
+		return nil,err
+	}
+	return user.Products,nil
 }
 
 
@@ -133,4 +149,59 @@ func CheckStorage(cap uint,products []Product) bool{
 		return false
 	}
 	return true
+}
+
+func UpdateLastLogin(Db *gorm.DB,user *User)error{
+	user.LastLogin = time.Now()
+	if err := Db.Save(user).Error; err != nil{
+		return err
+	}
+	return nil
+
+}
+
+func isGetDaily(user *User)bool{
+	lastLogin := user.LastLogin
+	now := time.Now()
+	return now.Truncate(12*time.Hour).Equal(lastLogin.Truncate(12*time.Hour))
+}
+
+func getDailyMoney(Db *gorm.DB,user *User)error{
+	dailyMoney,err := CalDailyMoney(Db,user)
+	if err != nil{
+		return err
+	}
+	user.Money += dailyMoney
+	if err := Db.Save(user).Error; err != nil{
+		return err
+	}
+	return nil
+}
+
+func CalDailyMoney(Db *gorm.DB,user *User)(uint,error){
+	initialMoney := 100
+	products,err := GetUserProducts(Db,int(user.ID))
+	if err != nil {
+		return 0,err
+	}
+	for _,product := range products{
+		rarity ,err := findRarity(Db,product.Name)
+		if err != nil{
+			return 0,err
+		}
+		fmt.Println(rarity)
+		fmt.Println(initialMoney)
+		initialMoney += 10000/int(rarity)
+	}
+	return uint(initialMoney),nil
+}
+
+func findRarity(Db *gorm.DB,name string)(uint ,error){
+	productList := new(ProductList)
+	result := Db.Where("name = ?",name).First(productList)
+	if result.Error != nil {
+		return 0,result.Error
+	}
+	return productList.Rarity,nil
+
 }

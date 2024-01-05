@@ -7,12 +7,15 @@
     <h1>Landing</h1>
     <h2 id="money">Money :</h2>
     <h2 id="moneyValue"></h2>
+    <h2 id="loginReward">Login between 7 AM - 7 PM , 7 PM - 7 AM for a reward : </h2>
+    <h2 id="rewardValue"></h2>
     <br>
     <div id="menuButton">
         <button onclick="showMarket()">Market</button>
         <button onclick="showInventory()">Inventory</button>
         <button onclick="showMyMarket()">My Market</button>
-        <button onclick="randomNewProduct()">Receive Random Product</button>
+        <br>
+        <button onclick="randomNewProduct()">Receive Random Product Cost : 50</button>
         <br>
         <button onclick="Logout()">Logout</button>
         <br>        
@@ -78,6 +81,11 @@
                 .then(user => {
                     document.getElementById("moneyValue").innerText = user.money;                   
                 })
+            fetch('/user/loginReward')
+                .then(response => response.json())
+                .then(reward => {
+                    document.getElementById("rewardValue").innerText = reward;                   
+            })
         };
         function showMarket() {
             clearProductTable();
@@ -111,6 +119,11 @@
                                 .then(response => response.json())
                                 .then(user => {
                                     document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                            fetch('/user/loginReward')
+                                .then(response => response.json())
+                                .then(reward => {
+                                    document.getElementById("rewardValue").innerText = reward;                   
                                 })
                         } else {
                             console.error("Random failed");
@@ -283,6 +296,11 @@
                                 .then(user => {
                                     document.getElementById("moneyValue").innerText = user.money;                   
                                 })
+                            fetch('/user/loginReward')
+                                .then(response => response.json())
+                                .then(reward => {
+                                    document.getElementById("rewardValue").innerText = reward;                   
+                                })
                         } else {
                             console.error("Sell failed");
                         }
@@ -309,6 +327,11 @@
                                 .then(response => response.json())
                                 .then(user => {
                                     document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                    fetch('/user/loginReward')
+                                .then(response => response.json())
+                                .then(reward => {
+                                    document.getElementById("rewardValue").innerText = reward;                   
                                 })
                 } else {
                     console.error("Buy failed");
