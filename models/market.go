@@ -28,7 +28,6 @@ func GetMarketProductByPriceFilter(Db *gorm.DB,first uint,last uint) ([]Product,
 			filterProducts = append(filterProducts,product)
 		}
 	}
-
 	return filterProducts,nil
 }
 

@@ -7,29 +7,30 @@
     <h1>Landing</h1>
     <h2 id="money">Money :</h2>
     <h2 id="moneyValue"></h2>
-    <h2 id="loginReward">Login between 7 AM - 7 PM , 7 PM - 7 AM for a reward : </h2>
-    <h2 id="rewardValue"></h2>
-    <br>
-    <div id="menuButton">
-        <button onclick="showMarket()">Market</button>
-        <button onclick="showInventory()">Inventory</button>
-        <button onclick="showMyMarket()">My Market</button>
-        <br>
-        <button onclick="randomNewProduct()">Receive Random Product Cost : 50</button>
-        <br>
-        <button onclick="Logout()">Logout</button>
-        <br>        
-        <div class="popup" id="popup">
-            <h2 id="popup-content"></h2>
-            <!-- Your form or content goes here -->
-            <input type="number" name="quantity" min="0" step="1" id="price-set">
-            <button class="close-btn" id="confirmSystem">Confirm</button>
-            <button class="close-btn" onclick="closePopup()">Close</button>
-        </div>
-        <div class="overlay" id="overlay" onclick="closePopup()"></div>
-
-
+    <h2 id="loginReward" style="margin-top: 5px;margin-bottom: 5px;">Login between 7 AM - 7 PM , 7 PM - 7 AM </h2>
+    <div>
+        <h2 style="display: inline;">for a reward : </h2>
+        <h2 style="display: inline;" id="rewardValue"></h2>
     </div>
+    <button onclick="showMarket()">Market</button>
+    <button onclick="showInventory()">Inventory</button>
+    <button onclick="showMyMarket()">My Market</button>
+    <button onclick="showHistory()">History</button>
+    <br>
+    <button onclick="randomNewProduct()">Receive Random Product Cost : 50</button>
+    <br>
+    <h1 id="error-message"></h1>
+    <br>
+    <button onclick="Logout()">Logout</button>
+    <br>        
+    <div class="popup" id="popup">
+        <h2 id="popup-content"></h2>
+        <input type="number" name="quantity" min="0" step="1" id="price-set">
+        <button class="close-btn" id="confirmSystem">Confirm</button>
+        <button class="close-btn" onclick="closePopup()">Close</button>
+    </div>
+    <div class="overlay" id="overlay" onclick="closePopup()"></div>
+
     <div id="productTableContainer"></div>
 
     <script>
@@ -47,7 +48,6 @@
             };
         }
         function openConfirmPopup(product) {
-            // Display the overlay and popup
             document.getElementById('popup-content').innerHTML = "Are you sure to sell " +product.product_name+ " : "+ product.default_price+" to system ?"
             document.getElementById('overlay').style.display = 'flex';
             document.getElementById('popup').style.display = 'block';
@@ -55,6 +55,16 @@
                 document.getElementById('overlay').style.display = 'none';
                 document.getElementById('popup').style.display = 'none';
                 confirmSellProductSystem(product);
+            };
+        }
+        function openConfirmUpgradePopup(cost) {
+            document.getElementById('popup-content').innerHTML = "Are you sure to upgrade inventory +10 Capacity ?<br>Cost : " +cost;
+            document.getElementById('overlay').style.display = 'flex';
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('confirmSystem').onclick = function() {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('popup').style.display = 'none';
+                confirmUpgrade();
             };
         }
         function openBuyPopup(product) {
@@ -76,6 +86,7 @@
         }
 
         window.onload = function() {
+            showMarket();
             fetch('/user')
                 .then(response => response.json())
                 .then(user => {
@@ -105,7 +116,15 @@
                 .then(response => response.json())
                 .then(products => displayMyMarketProductTable(products, 'My Market'));
         }
+        function showHistory() {
+            clearProductTable();
+            fetch('/user/product/history')
+                .then(response => response.json())
+                .then(historys => displayHistoryTable(historys, 'History'));
+        }
         function randomNewProduct(){
+            document.getElementById("error-message").innerText = "";  
+            document.getElementById("error-message").style.display = 'none'
             fetch("/user/product/recieve/random", {
                         method: "PATCH",
                         headers: {
@@ -125,13 +144,21 @@
                                 .then(reward => {
                                     document.getElementById("rewardValue").innerText = reward;                   
                                 })
-                        } else {
-                            console.error("Random failed");
-                        }
-                    });
+                            } else {
+                                return response.text().then(errorMessage => {
+                                    throw new Error(errorMessage);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            document.getElementById("error-message").innerText = error.message;  
+                            document.getElementById("error-message").style.display = "block"
+                        });
         }
 
-        function displayInventoryProductTable(products, title) {
+        function displayInventoryProductTable(products, title,size) {
+            document.getElementById("error-message").innerText = "";  
+            document.getElementById("error-message").style.display = 'none'
             const tableContainer = document.getElementById('productTableContainer');
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
@@ -166,12 +193,28 @@
                 };
                 cell4.appendChild(sellSystemButton);
             }
-
-            tableContainer.innerHTML = `<h2>${title}</h2>`;
-            tableContainer.appendChild(table);
+            fetch('/user')
+                .then(response => response.json())
+                .then(user => {
+                    cap = user.storage;
+                    cost = cap * 10
+                    tableContainer.innerHTML =   `  
+                        <h2>${title}</h2>
+                        <h2>Capacity: ${cap}</h2>
+                        <button id="upgradeButton">Upgrade Inventory ${cost}</button>`;
+                    document.getElementById("upgradeButton").onclick = function(){
+                        openConfirmUpgradePopup(cost)
+                        
+                    };
+                    tableContainer.appendChild(table);                   
+                })
+            
+            
         }
 
         function displayMarketProductTable(products, title) {
+            document.getElementById("error-message").innerText = "";  
+            document.getElementById("error-message").style.display = 'none'
             const tableContainer = document.getElementById('productTableContainer');
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
@@ -204,6 +247,8 @@
         }
 
         function displayMyMarketProductTable(products, title) {
+            document.getElementById("error-message").innerText = "";  
+            document.getElementById("error-message").style.display = 'none'
             const tableContainer = document.getElementById('productTableContainer');
             const table = document.createElement('table');
             const headerRow = table.createTHead().insertRow(0);
@@ -239,11 +284,65 @@
                             // window.location.href = "/landing"; 
                             showInventory();
                         } else {
-                            console.error("Cancel failed");
+                            return response.text().then(errorMessage => {
+                                throw new Error(errorMessage);
+                            });
                         }
+                    
+                    })
+                    .catch(error => {
+                        document.getElementById("error-message").innerText = error.message;  
+                        document.getElementById("error-message").style.display = "block"
                     });
                 };
                 cell3.appendChild(CancelButton);
+
+            }
+
+            tableContainer.innerHTML = `<h2>${title}</h2>`;
+            tableContainer.appendChild(table);
+        }
+
+        function displayHistoryTable(historys, title) {
+            document.getElementById("error-message").innerText = "";  
+            document.getElementById("error-message").style.display = 'none'
+            const tableContainer = document.getElementById('productTableContainer');
+            const table = document.createElement('table');
+            const headerRow = table.createTHead().insertRow(0);
+            headerRow.insertCell(0).innerHTML = '<strong>History</strong>';
+            headerRow.insertCell(1).innerHTML = '<strong>Value</strong>';
+            if (historys == null){
+                historys = []
+            }
+            for (const history of historys) {
+                const row = table.insertRow();
+                switch (history.is_receive){
+                    case 1:
+                        row.insertCell(0).innerHTML = "Receive money from selling " + history.product_name + " in system";
+                        row.insertCell(1).innerHTML = "+ "+history.value.toString();
+
+                        break;
+                    case 2:
+                        row.insertCell(0).innerHTML = "Receive money from selling " + history.product_name + " in market";
+                        row.insertCell(1).innerHTML = "+ "+history.value.toString();
+                        break;
+                    case 3:
+                        row.insertCell(0).innerHTML = "Spend money for buying " + history.product_name + " in market";
+                        row.insertCell(1).innerHTML = "- "+history.value.toString();
+                        break;
+                    case 4:
+                        row.insertCell(0).innerHTML = "Spend money for random product and receive " + history.product_name ;
+                        row.insertCell(1).innerHTML = "- "+history.value.toString();
+                        break;
+                    case 5:
+                        row.insertCell(0).innerHTML = "Receive money from daily login ";
+                        row.insertCell(1).innerHTML = "+ "+history.value.toString();
+                        break;
+                    default:
+                        break
+                }
+
+
 
             }
 
@@ -273,9 +372,25 @@
                             document.getElementById('popup').style.display = 'none';
                             document.getElementById('price-set').style.display = 'none';
                             showInventory();
+                            fetch('/user')
+                                .then(response => response.json())
+                                .then(user => {
+                                    document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                            fetch('/user/loginReward')
+                                .then(response => response.json())
+                                .then(reward => {
+                                    document.getElementById("rewardValue").innerText = reward;                   
+                                })
                         } else {
-                            console.error("Sell failed");
+                            return response.text().then(errorMessage => {
+                                throw new Error(errorMessage);
+                            });
                         }
+                    })
+                    .catch(error => {
+                        document.getElementById("error-message").innerText = error.message;  
+                        document.getElementById("error-message").style.display = "block"
                     });
                 };        
         function confirmSellProductSystem(product) {
@@ -302,8 +417,14 @@
                                     document.getElementById("rewardValue").innerText = reward;                   
                                 })
                         } else {
-                            console.error("Sell failed");
+                            return response.text().then(errorMessage => {
+                                throw new Error(errorMessage);
+                            });
                         }
+                    })
+                    .catch(error => {
+                        document.getElementById("error-message").innerText = error.message;  
+                        document.getElementById("error-message").style.display = "block"
                     });
                 };
         function confirmBuyProductMarket(product,price) {
@@ -322,6 +443,8 @@
                     document.getElementById('overlay').style.display = 'none';
                     document.getElementById('popup').style.display = 'none';
                     document.getElementById('price-set').style.display = 'none';
+                    document.getElementById("error-message").innerText = "";  
+                    document.getElementById("error-message").style.display = 'none'
                     showInventory();
                     fetch('/user')
                                 .then(response => response.json())
@@ -334,11 +457,49 @@
                                     document.getElementById("rewardValue").innerText = reward;                   
                                 })
                 } else {
-                    console.error("Buy failed");
+                    return response.text().then(errorMessage => {
+                        throw new Error(errorMessage);
+                    });
                 }
+            
+            })
+            .catch(error => {
+                document.getElementById("error-message").innerText = error.message;  
+                document.getElementById("error-message").style.display = "block"
             });
+            
         };      
-
+        function confirmUpgrade() {
+                    fetch("/user/product/upgradeinventory", {
+                        method: "PATCH",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            // window.location.href = "/landing"; 
+                            showInventory();
+                            fetch('/user')
+                                .then(response => response.json())
+                                .then(user => {
+                                    document.getElementById("moneyValue").innerText = user.money;                   
+                                })
+                            fetch('/user/loginReward')
+                                .then(response => response.json())
+                                .then(reward => {
+                                    document.getElementById("rewardValue").innerText = reward;                   
+                                })
+                        } else {
+                            return response.text().then(errorMessage => {
+                                throw new Error(errorMessage);
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById("error-message").innerText = error.message;  
+                        document.getElementById("error-message").style.display = "block"
+                    });
+                };
 
         function Logout() {
             window.location.href = "/login";
@@ -366,6 +527,9 @@
             height: 100vh;
             margin: 0;
         } */
+        #error-message{
+            display:none
+        }
         #menuButton{
             margin-top: 10px;
             margin-bottom: 10px;

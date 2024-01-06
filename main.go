@@ -46,12 +46,14 @@ func main() {
 	app.Get("/user/product",findProductByUserId)
 	app.Get("/user/product/inventory",findProductInventoryByUserId)
 	app.Get("/user/product/market",getUserMarketProducts)
+	app.Get("/user/product/history",getHistory)
 	app.Patch("/user/product/sellsystem",sellProductToSystem)
 	app.Patch("/user/product/sellmarket",sellProductToMarket)
 	app.Patch("/user/product/buymarket",buyProductFromMarket)
 	app.Patch("/user/product/cancelmarket",cancelProductFromMarket)
 	app.Patch("/user/product/claim",claimMoneyFromSoldProduct)
 	app.Patch("/user/product/recieve/random",randomReceiveProduct)
+	app.Patch("/user/product/upgradeinventory",upgradeInventory)
 
 
 	app.Get("/product/market/:id",getMarketProducts)
@@ -300,9 +302,11 @@ func sellProductToSystem(c *fiber.Ctx)error{
 	if err := database.Db.Save(user).Error; err != nil {
         return c.Status(fiber.StatusBadRequest).SendString(err.Error())
     }
+	if err := models.CreateHistory(database.Db,uint(userId),1,cost,productFull.Name);err!= nil{
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
 	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already Sell Product ID : %d",product.ID))
-	
-	
+
 }
 
 func sellProductToMarket(c *fiber.Ctx)error{
@@ -326,8 +330,7 @@ func sellProductToMarket(c *fiber.Ctx)error{
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
 
-	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already post Product ID : %d from Market",product.ID))
-	
+	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already post Product ID : %d from Market",product.ID))	
 }
 
 func buyProductFromMarket(c *fiber.Ctx)error{
@@ -381,9 +384,14 @@ func buyProductFromMarket(c *fiber.Ctx)error{
 	if err := database.Db.Save(sellUser).Error; err != nil {
         return c.Status(fiber.StatusBadRequest).SendString(err.Error())
     }
+	if err := models.CreateHistory(database.Db,sellerId,2,cost,beforeProduct.Name);err!= nil{
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+	if err := models.CreateHistory(database.Db,buyerId,3,cost,beforeProduct.Name);err!= nil{
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
 
-	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already buy Product ID : %d from Market",product.ID))
-	
+	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already buy Product ID : %d from Market",product.ID))	
 }
 
 func cancelProductFromMarket(c *fiber.Ctx)error{
@@ -445,4 +453,33 @@ func claimMoneyFromSoldProduct(c *fiber.Ctx)error{
         return c.Status(fiber.StatusBadRequest).SendString(err.Error())
     }
 	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Receive : %d from sell product : %s in the market",productFull.PriceSet,productFull.Name))
+}
+
+func getHistory(c *fiber.Ctx)error{
+	userId,ok := c.Locals("user_id").(int)
+
+	if !ok{
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid user ID")
+	}
+	historys,err := models.GetHistoryByUserId(database.Db,uint(userId))
+	if err != nil{
+		return c.Status(fiber.StatusInternalServerError).SendString("Can't get history")
+	}
+	return c.JSON(historys)
+}
+
+func upgradeInventory(c *fiber.Ctx)error{
+	userId,ok := c.Locals("user_id").(int)
+
+	if !ok{
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid user ID")
+	}
+	user,err := models.GetUser(database.Db,userId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+	if err := models.Upgrade(database.Db,&user) ; err!=nil{
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Already upgrade inventory"))
 }

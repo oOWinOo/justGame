@@ -129,6 +129,9 @@ func ReceiveNewRandomProduct(Db *gorm.DB,user *User)error{
 	if err := Db.Save(user).Error; err != nil {
         return err
     }
+	if err := CreateHistory(Db,user.ID,4,50,product.Name);err!= nil{
+		return err
+	}
 	return nil
 }
 
@@ -175,6 +178,9 @@ func getDailyMoney(Db *gorm.DB,user *User)error{
 	if err := Db.Save(user).Error; err != nil{
 		return err
 	}
+	if err := CreateHistory(Db,user.ID,5,dailyMoney,"");err!= nil{
+		return err
+	}
 	return nil
 }
 
@@ -185,6 +191,9 @@ func CalDailyMoney(Db *gorm.DB,user *User)(uint,error){
 		return 0,err
 	}
 	for _,product := range products{
+		if product.MarketId != 1{
+			continue
+		}
 		rarity ,err := findRarity(Db,product.Name)
 		if err != nil{
 			return 0,err
@@ -204,4 +213,20 @@ func findRarity(Db *gorm.DB,name string)(uint ,error){
 	}
 	return productList.Rarity,nil
 
+}
+
+func Upgrade(Db *gorm.DB,user *User)error{
+	cost := user.StorageSize*10
+	if user.Money < cost{
+		return errors.New("Not enough money.")
+	}
+	user.Money -= cost
+	user.StorageSize += 10;
+	if err := Db.Save(user).Error; err != nil{
+		return err
+	}
+	if err := CreateHistory(Db,user.ID,6,cost,"");err!= nil{
+		return err
+	}
+	return nil
 }

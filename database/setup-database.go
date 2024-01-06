@@ -43,7 +43,7 @@ func ConnectDatabase() {
 }
 
 func Initialize(){
-	Db.AutoMigrate(models.Market{},models.User{},models.Product{},models.ProductList{})
+	Db.AutoMigrate(models.Market{},models.User{},models.Product{},models.ProductList{},models.History{})
 }
 
 func InitializeData(){
