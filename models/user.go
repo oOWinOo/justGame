@@ -198,8 +198,6 @@ func CalDailyMoney(Db *gorm.DB,user *User)(uint,error){
 		if err != nil{
 			return 0,err
 		}
-		fmt.Println(rarity)
-		fmt.Println(initialMoney)
 		initialMoney += 10000/int(rarity)
 	}
 	return uint(initialMoney),nil

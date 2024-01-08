@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
@@ -26,7 +24,6 @@ func GetHistoryByUserId(Db *gorm.DB,id uint)([]History,error){
 	if result.Error != nil{
 		return *new([]History),result.Error
 	}
-	fmt.Println(*historys)
 	return *historys,nil
 }
 

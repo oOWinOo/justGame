@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 
 	"math/rand"
 
@@ -109,6 +108,5 @@ func ChangeOwner(Db *gorm.DB,newUserId uint,product *Product)error{
 	if err := Db.Save(*product).Error; err != nil {
         return err
     }
-	fmt.Println(product)
 	return nil
 }
