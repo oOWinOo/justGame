@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/oOWinOo/justGame/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -23,6 +25,22 @@ const (
 var Db *gorm.DB
 
 func ConnectDatabase() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+		return
+	}
+
+	host := os.Getenv("host")
+	portStr := os.Getenv("port")
+	user := os.Getenv("user")
+	password := os.Getenv("password")
+	dbname := os.Getenv("dbname")
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		fmt.Println("Error converting port to integer:", err)
+		return
+	}
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", host, port, user, password, dbname)
 	newLogger := logger.New(
 		log.New(os.Stdout,"\r\n",log.LstdFlags),
@@ -32,7 +50,7 @@ func ConnectDatabase() {
 			Colorful: true,						//color
 		},
 	)
-	var err error
+	
 	Db,err = gorm.Open(postgres.Open(dsn),&gorm.Config{
 		Logger: newLogger,
 	})
