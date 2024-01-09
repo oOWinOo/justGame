@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/oOWinOo/justGame/database"
@@ -11,40 +12,39 @@ import (
 func main() {
 	database.ConnectDatabase()
 	database.Initialize()
-	// database.InitializeData()
+	database.InitializeData()
 	if err := godotenv.Load(); err != nil {
-        log.Fatal("Error loading .env file")
-    }
+		log.Fatal("Error loading .env file")
+	}
 	app := fiber.New()
 	app.Static("/", "./static")
-	app.Get("/login", handler.LoginPage)
+	app.Get("/", handler.LoginPage)
 	app.Get("/register", handler.RegisterPage)
-    app.Get("/landing", handler.LandingPage)
+	app.Get("/landing", handler.LandingPage)
 
 	// app.Post("/",postTest)
-	app.Post("/register",handler.Register)
-	app.Post("/login",handler.Login)
+	app.Post("/register", handler.Register)
+	app.Post("/login", handler.Login)
 
-	app.Use("/user",handler.UserAuthRequired)
-	app.Get("/user",handler.GetUserById)
-	app.Get("/user/loginReward",handler.GetUserLoginReward)
-	app.Get("/user/product",handler.GetUserProducts)
-	app.Get("/user/product/inventory",handler.GetUserInventoryProducts)
-	app.Get("/user/product/market",handler.GetUserMarketProducts)
-	app.Get("/user/product/history",handler.GetHistory)
-	app.Patch("/user/product/sellsystem",handler.SellProductToSystem)
-	app.Patch("/user/product/sellmarket",handler.SellProductToMarket)
-	app.Patch("/user/product/buymarket",handler.BuyProductFromMarket)
-	app.Patch("/user/product/cancelmarket",handler.CancelProductFromMarket)
+	app.Use("/user", handler.UserAuthRequired)
+	app.Get("/user", handler.GetUserById)
+	app.Get("/user/loginReward", handler.GetUserLoginReward)
+	app.Get("/user/product", handler.GetUserProducts)
+	app.Get("/user/product/inventory", handler.GetUserInventoryProducts)
+	app.Get("/user/product/market", handler.GetUserMarketProducts)
+	app.Get("/user/product/history", handler.GetHistory)
+	app.Patch("/user/product/sellsystem", handler.SellProductToSystem)
+	app.Patch("/user/product/sellmarket", handler.SellProductToMarket)
+	app.Patch("/user/product/buymarket", handler.BuyProductFromMarket)
+	app.Patch("/user/product/cancelmarket", handler.CancelProductFromMarket)
 	// app.Patch("/user/product/claim",claimMoneyFromSoldProduct)
-	app.Patch("/user/product/recieve/random",handler.RandomReceiveProduct)
-	app.Patch("/user/product/upgradeinventory",handler.UpgradeInventory)
+	app.Patch("/user/product/recieve/random", handler.RandomReceiveProduct)
+	app.Patch("/user/product/upgradeinventory", handler.UpgradeInventory)
 
-	app.Get("/product/market/:id",handler.GetMarketProducts)
-	app.Get("/product",handler.GetProducts)
+	app.Get("/product/market/:id", handler.GetMarketProducts)
+	app.Get("/product", handler.GetProducts)
 
-	app.Post("/admin/product/add",handler.AddNewProduct)
-	
+	app.Post("/admin/product/add", handler.AddNewProduct)
 
 	app.Listen(":8080")
 
@@ -70,7 +70,7 @@ func main() {
 // 	if err != nil{
 // 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 // 	}
-	
+
 // 	p = append(p, afterProduct.UserId)
 // 	return c.JSON(p)
 // }
@@ -102,4 +102,3 @@ func main() {
 //     }
 // 	return c.Status(fiber.StatusOK).SendString(fmt.Sprintf("Receive : %d from sell product : %s in the market",productFull.PriceSet,productFull.Name))
 // }
-
